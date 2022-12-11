@@ -1,62 +1,51 @@
 import "./styles.css";
 import styled from "styled-components";
 import { useState, useEffect } from "react";
-import { useAxios } from "./useAxios";
+import useAxios from "./util/useAxios";
 import Loading from "./components/Loading";
 
 const Wrapper = styled.div``;
 
-const Container = styled.section`
-  width: 100%;
-`;
+const Container = styled.section``;
 
-const Item = styled.div`
-  /* width: 300px; */
-  float: left;
-  margin: 10px;
-
-  &img {
-    width: 100%;
-    height: 170px;
-  }
+const Item = styled.img`
+  width: 300px;
 `;
 
 export default function App() {
+  const [images, setImages] = useState([]);
   const [pageNum, setPageNum] = useState(1);
-  const [loading, setLoading] = useState(true);
-  console.log(pageNum);
+  const { data, loading } = useAxios(pageNum);
 
-  const URL =
-    "https://api.unsplash.com/photos?page=1&client_id=BzK9qcDoVOU37glq0ApRxpPRDnL2aFmNrkoUCVMo2BI";
-
-  const { data } = useAxios(URL, pageNum, setLoading);
-
-  let scrollEnd =
-    window.innerHeight + document.documentElement.scrollTop + 1 >=
-    document.documentElement.scrollHeight;
+  console.log(loading);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (scrollEnd) {
-        // Window Height와 Scroll Top을 더한 값이 Scroll Height와 같아지는 지점이 스크롤이 맨 아래까지 당겨진 경우이다.
-        // 이때 여기서 + 1을 해주는 이유는 몇몇 브라우저에서는 값이 일치하지 않을 수 있기 때문
-        setPageNum(pageNum + 1);
-      }
-    };
+    if (data !== null) {
+      setImages([...images, ...data]);
+    }
+  }, [data]); // useAxios로부터 받아오는 data가 변경될 때마다 setImages로 images를 업데이트한다.
 
-    window.addEventListener("scroll", handleScroll); // scroll 이벤트가 감지되면 handleScroll 함수가 실행된다.
+  const handleScroll = () => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop >=
+      document.documentElement.scrollHeight
+    ) {
+      setPageNum((pageNum) => pageNum + 1);
+      console.log(pageNum);
+    }
+  };
 
-    return () => window.removeEventListener("scroll", handleScroll); // remove function
-  }, [scrollEnd]);
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll); // scroll 이벤트 등록
+
+    return () => window.removeEventListener("scroll", handleScroll); // scroll 이벤트 해제
+  });
 
   return (
     <Wrapper>
       <Container>
-        {data.map((el) => (
-          <Item>
-            <img src={el.urls.regular} key={el.id} />
-          </Item>
-        ))}
+        {images &&
+          images.map((el) => <Item src={el.urls.regular} key={el.id} />)}
       </Container>
       {loading && <Loading />}
       {/* loading이 true면 표시한다. */}
